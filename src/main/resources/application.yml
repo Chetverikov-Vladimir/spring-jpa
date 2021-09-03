@@ -1,11 +1,14 @@
 spring:
   datasource:
     url: jdbc:h2:mem:testdb
+    # отключение загрузки schema.sql и data.sql
     initialization-mode: never
 
   jpa:
+    # включение генерации ddl
     generate-ddl: true
     hibernate:
+      # более детальный контроль управление схемой, чем generate-ddl
       ddl-auto: create
 
     properties:
