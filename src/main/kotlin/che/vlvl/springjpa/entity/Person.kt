@@ -1,8 +1,15 @@
 package che.vlvl.springjpa.entity
 
+import org.hibernate.annotations.BatchSize
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import javax.persistence.*
 
 @Entity
+@NamedEntityGraph( // позволяет включить в родительский запрос связанное поле avatar
+    name = "avatar-entity-graph",
+    attributeNodes = [NamedAttributeNode("avatar")]
+)
 @Table(name = "persons")
 data class Person(
     @Id
@@ -39,11 +46,14 @@ data class Person(
         cascade = [CascadeType.ALL],
         fetch = FetchType.LAZY
     )
+    @BatchSize(size = 10) // Позволяет вытаскивать не по каждому человеку, а пачкой
+    @Fetch(FetchMode.SELECT) // Для работы с Batch
     @JoinColumn(
         name = "person_id", //Внешний ключ создается в таблице со стороны Many - в emails (дочерней сущности)
         foreignKey = ForeignKey(name = "FK_person")
     )
     val emails: List<Email>,
+
 
     @ManyToMany(
         targetEntity = Profession::class,
