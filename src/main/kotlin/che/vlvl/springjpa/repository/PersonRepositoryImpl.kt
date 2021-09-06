@@ -22,59 +22,46 @@ class PersonRepositoryImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getById(id: Long): Person? =
-        entityManager.find(Person::class.java, id)
+    override fun getById(id: Long): Person? = entityManager.find(Person::class.java, id)
 
     @Transactional(readOnly = true)
-    override fun getByName(name: String): List<Person> {
-        val query = entityManager.createQuery("select p from Person p where p.name = :name", Person::class.java)
-        query.setParameter("name", name)
-        return query.resultList
-    }
+    override fun getByName(name: String): List<Person> = entityManager
+        .createQuery("select p from Person p where p.name = :name", Person::class.java)
+        .setParameter("name", name)
+        .resultList
+
+    @Transactional
+    override fun deleteById(id: Long) = entityManager
+        .createQuery("delete from Person p where p.id = :id")
+        .setParameter("id", id)
+        .executeUpdate()
+
 
     @Transactional(readOnly = true)
-    override fun getAll(): List<Person> {
-        val query = entityManager.createQuery("select p from Person p", Person::class.java)
-        return query.resultList
-    }
+    override fun getAll(): List<Person> = entityManager
+        .createQuery("select p from Person p", Person::class.java)
+        .resultList
 
     /**
      * Позволяет объединить получение связанной сущности avatar в один запрос с родительским
      * Одно из решений проблемы N+1 запросов
      * Нужна аннотация @NamedEntityGraph в родительской сущности
      */
-    @Transactional
+    @Transactional(readOnly = true)
     override fun getAllWithEntityGraph(): List<Person> {
         val entityGraph = entityManager.getEntityGraph("avatar-entity-graph")
-        val query = entityManager.createQuery(
-            "select p from Person p",
-            Person::class.java
-        )
-        query.setHint("javax.persistence.fetchgraph", entityGraph)
-        return query.resultList
+        return entityManager
+            .createQuery("select p from Person p", Person::class.java)
+            .setHint("javax.persistence.fetchgraph", entityGraph)
+            .resultList
     }
 
     /**
      * Второе решение N+1 проблемы. Для полей OneToMany и ManyToMany в сущности нужно
      * играться с аннотацией hibernate @Fetch(FetchMode.SUBSELECT)
      */
-    @Transactional
-    override fun getAllWithJoinFetch(): List<Person> {
-        val query = entityManager.createQuery(
-            "select p from Person p " +
-                    "join fetch p.avatar " +
-                    "join fetch p.city ",
-            Person::class.java
-        )
-        return query.resultList
-    }
-
-    @Transactional
-    override fun deleteById(id: Long) {
-        val query = entityManager.createQuery("delete from Person p where p.id = :id")
-        query.setParameter("id", id)
-        query.executeUpdate()
-    }
-
-
+    @Transactional(readOnly = true)
+    override fun getAllWithJoinFetch(): List<Person> = entityManager
+        .createQuery("select p from Person p join fetch p.avatar join fetch p.city ", Person::class.java)
+        .resultList
 }
